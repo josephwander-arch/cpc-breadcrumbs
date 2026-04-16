@@ -1,0 +1,6 @@
+target/
+Cargo.lock
+.cpc-config.toml
+*.log
+.idea/
+.vscode/
