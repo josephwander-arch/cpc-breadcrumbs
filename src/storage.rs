@@ -11,7 +11,9 @@ use crate::schema::{Breadcrumb, IndexEntry};
 // ── Path helpers ───────────────────────────────────────────────────────────────
 
 pub fn state_dir() -> PathBuf {
-    PathBuf::from(r"C:\CPC\state\breadcrumbs")
+    std::env::var("CPC_BREADCRUMB_STATE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from(r"C:\CPC\state\breadcrumbs"))
 }
 
 fn index_path() -> PathBuf {
@@ -119,6 +121,7 @@ const LOCK_RETRIES: &[u64] = &[100, 200, 400, 800, 1500];
 fn open_locked(path: &PathBuf, project_id: &str) -> Result<std::fs::File, BreadcrumbError> {
     let file = std::fs::OpenOptions::new()
         .create(true)
+        .truncate(false)
         .read(true)
         .write(true)
         .open(path)
@@ -260,13 +263,14 @@ pub fn reap_stale(hours: u64) {
 
     if !reaped_ids.is_empty() {
         // Remove from index
-        if let Ok(()) = (|| -> Result<(), BreadcrumbError> {
+        let index_result: Result<(), BreadcrumbError> = {
             let mut index = read_index();
             for id in &reaped_ids {
                 index.remove(id);
             }
             write_index(&index)
-        })() {
+        };
+        if index_result.is_ok() {
             eprintln!(
                 "[breadcrumb reap] Reaped {} stale breadcrumb(s) (>{}h): {:?}",
                 reaped_ids.len(),

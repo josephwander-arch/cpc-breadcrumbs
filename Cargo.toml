@@ -1,6 +1,6 @@
 [package]
 name = "cpc-breadcrumbs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "Shared breadcrumb tracking library for CPC servers (multi-step operation state + fingerprint dedup)"
@@ -19,3 +19,6 @@ thiserror = "1"
 fs2 = "0.4"
 hostname = "0.4"
 cpc-paths = { git = "https://github.com/josephwander-arch/cpc-paths", tag = "v0.1.0" }
+
+[dev-dependencies]
+tempfile = "3"
