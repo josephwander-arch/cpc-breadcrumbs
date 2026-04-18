@@ -14,10 +14,10 @@
 //! (active.index.json + projects/*.jsonl) and splits each breadcrumb into
 //! an individual file. Orphans (in JSONL but not in index) are migrated too.
 
-pub mod error;
-pub mod schema;
 mod archive;
 mod conflict;
+pub mod error;
+pub mod schema;
 pub mod storage;
 
 pub use error::BreadcrumbError;
@@ -36,7 +36,11 @@ pub struct WriterContext {
 }
 
 impl WriterContext {
-    pub fn new(actor: impl Into<String>, machine: impl Into<String>, session: impl Into<String>) -> Self {
+    pub fn new(
+        actor: impl Into<String>,
+        machine: impl Into<String>,
+        session: impl Into<String>,
+    ) -> Self {
         WriterContext {
             actor: actor.into(),
             machine: machine.into(),
@@ -120,7 +124,9 @@ pub fn start(
     storage::ensure_dirs()?;
 
     let id = schema::new_id(name);
-    let pid = project_id.clone().unwrap_or_else(|| "_ungrouped".to_string());
+    let pid = project_id
+        .clone()
+        .unwrap_or_else(|| "_ungrouped".to_string());
     let now = now_rfc3339();
     let total = steps.len();
 
@@ -277,7 +283,9 @@ pub fn start_auto(
     storage::ensure_dirs()?;
 
     let id = schema::new_id(name);
-    let pid = project_id.clone().unwrap_or_else(|| "_ungrouped".to_string());
+    let pid = project_id
+        .clone()
+        .unwrap_or_else(|| "_ungrouped".to_string());
     let now = now_rfc3339();
     let total = steps.len();
 
@@ -359,9 +367,7 @@ pub fn status(project_id: Option<&str>, scope: Option<&str>) -> Result<Value, Br
 
         // Filter by project_id if specified
         if let Some(pid) = project_id {
-            all.retain(|bc| {
-                bc.project_id.as_deref().unwrap_or("_ungrouped") == pid
-            });
+            all.retain(|bc| bc.project_id.as_deref().unwrap_or("_ungrouped") == pid);
         }
 
         // Compute stale flag
@@ -528,14 +534,17 @@ pub fn read_active_index() -> std::collections::HashMap<String, IndexEntry> {
     let all = storage::load_all_active();
     let mut map = std::collections::HashMap::new();
     for bc in all {
-        map.insert(bc.id.clone(), IndexEntry {
-            id: bc.id,
-            project_id: bc.project_id,
-            name: bc.name,
-            owner: bc.owner,
-            last_activity_at: bc.last_activity_at,
-            started_at: bc.started_at,
-        });
+        map.insert(
+            bc.id.clone(),
+            IndexEntry {
+                id: bc.id,
+                project_id: bc.project_id,
+                name: bc.name,
+                owner: bc.owner,
+                last_activity_at: bc.last_activity_at,
+                started_at: bc.started_at,
+            },
+        );
     }
     map
 }
@@ -684,7 +693,10 @@ mod tests {
         let bc = make_test_bc_with_session("bc_conf_test", "_ungrouped", "session_other");
         assert!(conflict::check(&bc, "session_other").is_none());
         let info = conflict::check(&bc, "session_mine");
-        assert!(info.is_some(), "Expected conflict for different session within 30s");
+        assert!(
+            info.is_some(),
+            "Expected conflict for different session within 30s"
+        );
     }
 
     #[test]
@@ -696,7 +708,10 @@ mod tests {
 
         let mut bc2 = make_test_bc("bc_fresh_test", "_ungrouped");
         bc2.last_activity_at = chrono::Utc::now().to_rfc3339();
-        assert!(!bc2.is_stale(), "Just-created breadcrumb should not be stale");
+        assert!(
+            !bc2.is_stale(),
+            "Just-created breadcrumb should not be stale"
+        );
     }
 
     #[test]
@@ -715,23 +730,30 @@ mod tests {
         std::fs::create_dir_all(&projects_dir).unwrap();
 
         // Create index with 2 entries
-        let mut index: std::collections::HashMap<String, IndexEntry> = std::collections::HashMap::new();
-        index.insert("bc_indexed_1".to_string(), IndexEntry {
-            id: "bc_indexed_1".to_string(),
-            project_id: None,
-            name: "indexed op 1".to_string(),
-            owner: "test".to_string(),
-            last_activity_at: chrono::Utc::now().to_rfc3339(),
-            started_at: chrono::Utc::now().to_rfc3339(),
-        });
-        index.insert("bc_indexed_2".to_string(), IndexEntry {
-            id: "bc_indexed_2".to_string(),
-            project_id: None,
-            name: "indexed op 2".to_string(),
-            owner: "test".to_string(),
-            last_activity_at: chrono::Utc::now().to_rfc3339(),
-            started_at: chrono::Utc::now().to_rfc3339(),
-        });
+        let mut index: std::collections::HashMap<String, IndexEntry> =
+            std::collections::HashMap::new();
+        index.insert(
+            "bc_indexed_1".to_string(),
+            IndexEntry {
+                id: "bc_indexed_1".to_string(),
+                project_id: None,
+                name: "indexed op 1".to_string(),
+                owner: "test".to_string(),
+                last_activity_at: chrono::Utc::now().to_rfc3339(),
+                started_at: chrono::Utc::now().to_rfc3339(),
+            },
+        );
+        index.insert(
+            "bc_indexed_2".to_string(),
+            IndexEntry {
+                id: "bc_indexed_2".to_string(),
+                project_id: None,
+                name: "indexed op 2".to_string(),
+                owner: "test".to_string(),
+                last_activity_at: chrono::Utc::now().to_rfc3339(),
+                started_at: chrono::Utc::now().to_rfc3339(),
+            },
+        );
         let index_json = serde_json::to_string_pretty(&index).unwrap();
         std::fs::write(legacy_tmp.path().join("active.index.json"), &index_json).unwrap();
 
@@ -757,7 +779,10 @@ mod tests {
 
         // Verify: 4 files in active/
         let count = storage::active_count();
-        assert_eq!(count, 4, "All 4 breadcrumbs (including orphans) should be migrated");
+        assert_eq!(
+            count, 4,
+            "All 4 breadcrumbs (including orphans) should be migrated"
+        );
 
         // Verify orphans are now individually readable
         let o1 = storage::read_breadcrumb("bc_orphan_1776327146");
@@ -766,14 +791,16 @@ mod tests {
         assert!(o2.is_ok(), "Orphan 2 should be readable after migration");
 
         // Verify legacy dir was renamed
-        assert!(!legacy_tmp.path().exists() || {
-            // Check if renamed (legacy_tmp might still exist as empty parent)
-            let parent = legacy_tmp.path().parent().unwrap();
-            std::fs::read_dir(parent)
-                .unwrap()
-                .flatten()
-                .any(|e| e.file_name().to_string_lossy().contains("migrated"))
-        });
+        assert!(
+            !legacy_tmp.path().exists() || {
+                // Check if renamed (legacy_tmp might still exist as empty parent)
+                let parent = legacy_tmp.path().parent().unwrap();
+                std::fs::read_dir(parent)
+                    .unwrap()
+                    .flatten()
+                    .any(|e| e.file_name().to_string_lossy().contains("migrated"))
+            }
+        );
 
         teardown_sandbox();
     }
@@ -795,8 +822,16 @@ mod tests {
 
         // Abort should succeed (this was impossible in v0.2.x for orphans)
         let ctx = test_ctx();
-        let result = abort("clearing stale orphan", Some("bc_1776327146_manager_dashboard_fix3"), &ctx);
-        assert!(result.is_ok(), "Abort on migrated orphan should succeed: {:?}", result.err());
+        let result = abort(
+            "clearing stale orphan",
+            Some("bc_1776327146_manager_dashboard_fix3"),
+            &ctx,
+        );
+        assert!(
+            result.is_ok(),
+            "Abort on migrated orphan should succeed: {:?}",
+            result.err()
+        );
         assert_eq!(result.unwrap()["status"], "aborted");
         assert_eq!(storage::active_count(), 0);
 
@@ -845,7 +880,11 @@ mod tests {
         Breadcrumb {
             id: id.to_string(),
             name: format!("Test BC {}", id),
-            project_id: if project_id == "_ungrouped" { None } else { Some(project_id.to_string()) },
+            project_id: if project_id == "_ungrouped" {
+                None
+            } else {
+                Some(project_id.to_string())
+            },
             owner: "test_actor".to_string(),
             writer_actor: "test_actor".to_string(),
             writer_machine: "test_machine".to_string(),

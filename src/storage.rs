@@ -122,9 +122,7 @@ pub fn active_count() -> usize {
         .map(|entries| {
             entries
                 .flatten()
-                .filter(|e| {
-                    e.path().extension().and_then(|ext| ext.to_str()) == Some("json")
-                })
+                .filter(|e| e.path().extension().and_then(|ext| ext.to_str()) == Some("json"))
                 .count()
         })
         .unwrap_or(0)
@@ -328,7 +326,10 @@ pub fn migrate_legacy() {
     // 4. Rename legacy dir (reversible — don't delete)
     let ts = chrono::Local::now().format("%Y%m%d_%H%M%S");
     let migrated_name = format!("breadcrumbs.migrated_{}", ts);
-    let migrated_path = legacy_dir.parent().unwrap_or(&legacy_dir).join(migrated_name);
+    let migrated_path = legacy_dir
+        .parent()
+        .unwrap_or(&legacy_dir)
+        .join(migrated_name);
     match std::fs::rename(&legacy_dir, &migrated_path) {
         Ok(_) => {
             eprintln!(
@@ -352,8 +353,8 @@ pub fn migrate_legacy() {
 
 #[cfg(test)]
 pub mod test_helpers {
-    use std::sync::Mutex;
     use std::path::PathBuf;
+    use std::sync::Mutex;
 
     static ACTIVE_DIR_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
     static COMPLETED_DIR_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);

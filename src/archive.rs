@@ -1,6 +1,6 @@
-use std::path::PathBuf;
-use crate::schema::Breadcrumb;
 use crate::error::BreadcrumbError;
+use crate::schema::Breadcrumb;
+use std::path::PathBuf;
 
 /// Archive a breadcrumb: write to completed/{date}/ and remove from active/.
 /// Delegates to storage::archive_breadcrumb.
