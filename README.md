@@ -2,6 +2,15 @@
 
 Shared breadcrumb tracking library for CPC MCP servers.
 
+## Install
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.git", tag = "v0.2.0" }
+```
+
 ## What it does
 
 Provides multi-step operation state, cross-session continuity, and fingerprint-based dedup for breadcrumb tracking across CPC servers. Used by `autonomous` and `local` servers.
@@ -12,6 +21,13 @@ Features:
 - **Auto-reap** — configurable stale breadcrumb cleanup via `CPC_BREADCRUMB_AUTO_REAP_HOURS`
 - **Drive-synced archiving** — completed breadcrumbs archived to `C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\`
 - **Backward compatibility** — callers without `project_id` use `_ungrouped`; callers without `breadcrumb_id` work as long as exactly one breadcrumb is active
+
+### Design Principles (D1–D4)
+
+- **D1 — Archive discipline**: completed breadcrumbs are always archived, never silently dropped
+- **D2 — Display-source separation**: the storage format is independent of how breadcrumbs are rendered
+- **D3 — Graceful abort/adopt**: orphaned breadcrumbs from crashed sessions can be adopted by new sessions or explicitly aborted
+- **D4 — Reconcile primitive**: concurrent writers are detected via fingerprints and resolved deterministically
 
 ## Usage
 
@@ -55,16 +71,32 @@ Archive:  C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\bc_{id}.json
 
 ## Part of CPC
 
-`cpc-breadcrumbs` is part of [CPC (Cognitive Performance Computing)](https://github.com/josephwander-arch), a multi-agent AI orchestration platform with 460+ tools across 13 MCP servers.
+**Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) · [local](https://github.com/josephwander-arch/local) · [hands](https://github.com/josephwander-arch/hands) · [workflow](https://github.com/josephwander-arch/workflow) · [cpc-paths](https://github.com/josephwander-arch/cpc-paths)
 
-Related crates:
-- [`cpc-paths`](https://github.com/josephwander-arch/cpc-paths) — portable path discovery for CPC MCP servers
+## Build from Source
+
+```bash
+git clone https://github.com/josephwander-arch/cpc-breadcrumbs.git
+cd cpc-breadcrumbs
+cargo build
+```
+
+This is a library crate — no binary is produced. Requires Rust stable toolchain.
+
+## Requirements
+
+- Rust stable toolchain
+- Windows 10/11 (primary), macOS/Linux (v0.2.0+)
 
 ## Versioning
 
 - v0.1.x — Windows verified, file-locked JSONL storage, multi-project support
 - v0.2.0 — macOS/Linux verified
 
+## Contributing
+
+Issues welcome; PRs considered but this is primarily maintained as part of the CPC stack.
+
 ## License
 
-Apache 2.0
+Licensed under Apache-2.0 — see [LICENSE](LICENSE).
