@@ -16,7 +16,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Run tests
-        run: cargo test --release -- --test-threads=1
+        run: cargo test --release
         timeout-minutes: 10
 
   check-targets:

@@ -353,35 +353,37 @@ pub fn migrate_legacy() {
 
 #[cfg(test)]
 pub mod test_helpers {
+    use std::cell::RefCell;
     use std::path::PathBuf;
-    use std::sync::Mutex;
 
-    static ACTIVE_DIR_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
-    static COMPLETED_DIR_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
-    static LEGACY_DIR_OVERRIDE: Mutex<Option<PathBuf>> = Mutex::new(None);
+    thread_local! {
+        static ACTIVE_DIR_OVERRIDE: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+        static COMPLETED_DIR_OVERRIDE: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+        static LEGACY_DIR_OVERRIDE: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+    }
 
     pub fn set_active_dir(path: PathBuf) {
-        *ACTIVE_DIR_OVERRIDE.lock().unwrap() = Some(path);
+        ACTIVE_DIR_OVERRIDE.with(|c| *c.borrow_mut() = Some(path));
     }
     pub fn set_completed_dir(path: PathBuf) {
-        *COMPLETED_DIR_OVERRIDE.lock().unwrap() = Some(path);
+        COMPLETED_DIR_OVERRIDE.with(|c| *c.borrow_mut() = Some(path));
     }
     pub fn set_legacy_dir(path: PathBuf) {
-        *LEGACY_DIR_OVERRIDE.lock().unwrap() = Some(path);
+        LEGACY_DIR_OVERRIDE.with(|c| *c.borrow_mut() = Some(path));
     }
     pub fn clear_overrides() {
-        *ACTIVE_DIR_OVERRIDE.lock().unwrap() = None;
-        *COMPLETED_DIR_OVERRIDE.lock().unwrap() = None;
-        *LEGACY_DIR_OVERRIDE.lock().unwrap() = None;
+        ACTIVE_DIR_OVERRIDE.with(|c| *c.borrow_mut() = None);
+        COMPLETED_DIR_OVERRIDE.with(|c| *c.borrow_mut() = None);
+        LEGACY_DIR_OVERRIDE.with(|c| *c.borrow_mut() = None);
     }
 
     pub fn get_active_dir_override() -> Option<PathBuf> {
-        ACTIVE_DIR_OVERRIDE.lock().unwrap().clone()
+        ACTIVE_DIR_OVERRIDE.with(|c| c.borrow().clone())
     }
     pub fn get_completed_dir_override() -> Option<PathBuf> {
-        COMPLETED_DIR_OVERRIDE.lock().unwrap().clone()
+        COMPLETED_DIR_OVERRIDE.with(|c| c.borrow().clone())
     }
     pub fn get_legacy_dir_override() -> Option<PathBuf> {
-        LEGACY_DIR_OVERRIDE.lock().unwrap().clone()
+        LEGACY_DIR_OVERRIDE.with(|c| c.borrow().clone())
     }
 }

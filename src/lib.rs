@@ -647,13 +647,20 @@ mod tests {
 
     #[test]
     fn test_concurrent_starts() {
-        let (_a, _c) = setup_sandbox();
+        let (active_tmp, _c) = setup_sandbox();
+        let active_path = active_tmp.path().to_path_buf();
+        let completed_path = _c.path().to_path_buf();
         let barrier = Arc::new(Barrier::new(10));
 
         let handles: Vec<_> = (0..10)
             .map(|i| {
                 let b = barrier.clone();
+                let ap = active_path.clone();
+                let cp = completed_path.clone();
                 std::thread::spawn(move || {
+                    // Each child thread must set its own thread-local overrides
+                    storage::test_helpers::set_active_dir(ap);
+                    storage::test_helpers::set_completed_dir(cp);
                     b.wait();
                     let ctx = WriterContext::new("test", "machine", format!("session_{}", i));
                     start(&format!("concurrent_{}", i), vec!["s1".into()], None, &ctx)
@@ -870,6 +877,38 @@ mod tests {
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
+
+    /// Verify no test data leaked to real Volumes active directory.
+    #[test]
+    fn test_no_leak_to_real_volumes() {
+        let real_active = cpc_paths::volumes_path()
+            .map(|v| v.join("breadcrumbs").join("active"))
+            .unwrap_or_else(|_| {
+                std::path::PathBuf::from(r"C:\My Drive\Volumes\breadcrumbs\active")
+            });
+        if !real_active.exists() {
+            return; // CI environment — no real Volumes
+        }
+        let entries = std::fs::read_dir(&real_active).unwrap();
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                assert!(
+                    !content.contains("\"owner\":\"test_actor\""),
+                    "LEAK DETECTED: {} contains test_actor data",
+                    path.display()
+                );
+                assert!(
+                    !content.contains("\"writer_machine\":\"test_machine\""),
+                    "LEAK DETECTED: {} contains test_machine data",
+                    path.display()
+                );
+            }
+        }
+    }
 
     fn make_test_bc(id: &str, project_id: &str) -> Breadcrumb {
         make_test_bc_with_session(id, project_id, "session_default")

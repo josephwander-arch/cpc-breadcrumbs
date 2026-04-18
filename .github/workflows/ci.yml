@@ -106,6 +106,17 @@ jobs:
       - name: cargo check (arm64)
         run: cargo check --target aarch64-pc-windows-msvc
 
+  cargo-test:
+    name: Cargo Test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run tests (parallel)
+        run: cargo test
+        timeout-minutes: 10
+
   cargo-fmt:
     name: Cargo Fmt
     runs-on: ubuntu-latest
