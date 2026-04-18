@@ -1,6 +1,10 @@
 # cpc-breadcrumbs
 
-Shared breadcrumb tracking library for CPC MCP servers.
+Shared breadcrumb tracking library for CPC MCP servers. Provides crash-safe state for multi-step operations that span restarts, sessions, and agents.
+
+**Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration system built on Claude + MCP (Model Context Protocol). Related repos: [manager](https://github.com/josephwander-arch/manager) · [local](https://github.com/josephwander-arch/local) · [hands](https://github.com/josephwander-arch/hands) · [workflow](https://github.com/josephwander-arch/workflow) · [cpc-paths](https://github.com/josephwander-arch/cpc-paths)
+
+This crate is a dependency of CPC's MCP server binaries — most users won't install it directly; it's pulled in automatically via git tag when you build a CPC server from source.
 
 ## Install
 
@@ -13,7 +17,7 @@ cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.
 
 ## What it does
 
-Provides multi-step operation state, cross-session continuity, and fingerprint-based dedup for breadcrumb tracking across CPC servers. Used by `autonomous` and `local` servers.
+Provides multi-step operation state, cross-session continuity, and fingerprint-based dedup for breadcrumb tracking across CPC servers. Consumed via git tag by CPC's Rust MCP servers.
 
 Features:
 - **Multi-project support** — per-project JSONL storage with file-level locking
@@ -68,10 +72,6 @@ Archive:  C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\bc_{id}.json
 | `CPC_ACTOR` | Actor name injected into writer context |
 | `CPC_SESSION_ID` | Session ID for conflict detection |
 | `CPC_BREADCRUMB_AUTO_REAP_HOURS` | Reap stale breadcrumbs older than N hours (0 = disabled) |
-
-## Part of CPC
-
-**Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) · [local](https://github.com/josephwander-arch/local) · [hands](https://github.com/josephwander-arch/hands) · [workflow](https://github.com/josephwander-arch/workflow) · [cpc-paths](https://github.com/josephwander-arch/cpc-paths)
 
 ## Build from Source
 
