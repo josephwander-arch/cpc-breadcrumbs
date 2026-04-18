@@ -12,7 +12,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.git", tag = "v0.2.0" }
+cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.git", tag = "v0.3.0" }
 ```
 
 ## What it does
@@ -20,10 +20,12 @@ cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.
 Provides multi-step operation state, cross-session continuity, and fingerprint-based dedup for breadcrumb tracking across CPC servers. Consumed via git tag by CPC's Rust MCP servers.
 
 Features:
-- **Multi-project support** — per-project JSONL storage with file-level locking
-- **Fingerprint dedup** — conflict detection when multiple sessions write the same breadcrumb
+- **One-file-per-breadcrumb** — each active breadcrumb is a standalone JSON file; no index to diverge
+- **Atomic writes** — tmp+rename pattern prevents partial reads on concurrent access
+- **Conflict detection** — fingerprint-based detection when multiple sessions write the same breadcrumb
 - **Auto-reap** — configurable stale breadcrumb cleanup via `CPC_BREADCRUMB_AUTO_REAP_HOURS`
-- **Drive-synced archiving** — completed breadcrumbs archived to `C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\`
+- **Drive-synced storage** — active and completed breadcrumbs live on Google Drive for Desktop (local-first, async cloud sync)
+- **Legacy migration** — on first init(), reads old dual-store (index + JSONL) and migrates all breadcrumbs including orphans
 - **Backward compatibility** — callers without `project_id` use `_ungrouped`; callers without `breadcrumb_id` work as long as exactly one breadcrumb is active
 
 ### Design Principles (D1–D4)
@@ -60,10 +62,19 @@ fn main() -> anyhow::Result<()> {
 ## Storage layout
 
 ```
-Active:   C:\CPC\state\breadcrumbs\active.index.json
-          C:\CPC\state\breadcrumbs\projects\{project_id}.jsonl
+Active:   C:\My Drive\Volumes\breadcrumbs\active\bc_{id}.json
 Archive:  C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\bc_{id}.json
 ```
+
+### Migration (v0.2 to v0.3)
+
+On first `init()`, the library checks for legacy state at `C:\CPC\state\breadcrumbs\`. If found:
+1. Reads all breadcrumbs from `active.index.json` and `projects/*.jsonl`
+2. Writes each as an individual file in `active/` (including orphans that were unreachable in v0.2)
+3. Renames the legacy directory to `breadcrumbs.migrated_{timestamp}` (reversible, not deleted)
+4. Logs a summary to stderr
+
+Migration is idempotent -- safe to run multiple times. Once the legacy dir is renamed, subsequent `init()` calls skip it.
 
 ## Environment variables
 
@@ -90,8 +101,9 @@ This is a library crate — no binary is produced. Requires Rust stable toolchai
 
 ## Versioning
 
-- v0.1.x — Windows verified, file-locked JSONL storage, multi-project support
-- v0.2.0 — macOS/Linux verified
+- v0.1.x -- Windows verified, file-locked JSONL storage, multi-project support
+- v0.2.0 -- macOS/Linux verified, archive discipline, reconcile primitive
+- v0.3.0 -- Unified one-file-per-breadcrumb storage, legacy migration, orphan recovery
 
 ## Contributing
 

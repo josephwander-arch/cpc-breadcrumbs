@@ -88,8 +88,8 @@ impl Breadcrumb {
     pub fn is_stale(&self) -> bool {
         chrono::DateTime::parse_from_rfc3339(&self.last_activity_at)
             .map(|last| {
-                let age =
-                    chrono::Utc::now().signed_duration_since(last.with_timezone(&chrono::Utc));
+                let age = chrono::Utc::now()
+                    .signed_duration_since(last.with_timezone(&chrono::Utc));
                 age.num_hours() >= 4
             })
             .unwrap_or(false)

@@ -2,11 +2,24 @@
 
 ## [Unreleased]
 
-### Added
+## [0.3.0] - 2026-04-18
 
-- **GitHub Actions CI workflow** — push/PR to main runs mojibake scan, cargo check (x64 + ARM64), fmt, clippy, version alignment.
-- **GitHub Actions release workflow** — `v*` tag push validates library builds on both targets.
-- **SECURITY.md** — security policy and reporting instructions.
+### Changed
+- **Unified storage** -- replaced dual-store (active.index.json + projects/*.jsonl) with one-file-per-breadcrumb in `Volumes/breadcrumbs/active/bc_{id}.json`. Eliminates the index-vs-project-file split-brain that caused count mismatches and unreachable orphans.
+- **Atomic writes** -- all breadcrumb writes use tmp+rename pattern. No file locking needed.
+- **Archive path** -- `complete()` and `abort()` now rename from `active/` to `completed/{date}/` (same volume, atomic).
+- **Removed `fs2` dependency** -- no more per-project file locking.
+- **Removed `ProjectLocked` error variant** -- no longer applicable.
+
+### Added
+- **Legacy migration** -- `init()` calls `migrate_legacy()` on startup. Reads old index + JSONL files, writes each breadcrumb as an individual JSON file. Orphans (in JSONL but missing from index) are migrated too. Legacy directory is renamed to `breadcrumbs.migrated_{timestamp}` (reversible).
+- **`mutate_breadcrumb()`** -- internal read-modify-write helper with atomic persistence.
+- **13 unit tests** -- migration with orphans, orphan abort recovery, atomic write verification, concurrent starts (10 threads), conflict detection, stale detection, start/step/complete/abort/adopt lifecycle.
+
+### Fixed
+- **Count mismatch** -- `active_count()` and `status()` now read the same source (directory listing), eliminating the 2-vs-4 divergence.
+- **Abort "not found" on orphans** -- orphaned breadcrumbs (present in JSONL but absent from index) are now first-class citizens in the new storage and fully reachable by `abort()`, `adopt()`, and all mutation paths.
+- **Stale persistence across restarts** -- orphans no longer survive indefinitely; they are either migrated (if legacy) or reapable (if active).
 
 ## [0.2.0] - 2026-04-17
 

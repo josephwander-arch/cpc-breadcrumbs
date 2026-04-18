@@ -1,9 +1,9 @@
 [package]
 name = "cpc-breadcrumbs"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "Shared breadcrumb tracking library for CPC servers (multi-step operation state + fingerprint dedup)"
+description = "Shared breadcrumb tracking library for CPC servers — one-file-per-breadcrumb on Google Drive for Desktop"
 repository = "https://github.com/josephwander-arch/cpc-breadcrumbs"
 readme = "README.md"
 keywords = ["cpc", "mcp", "breadcrumb", "tracking"]
@@ -16,7 +16,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1"
-fs2 = "0.4"
 hostname = "0.4"
 cpc-paths = { git = "https://github.com/josephwander-arch/cpc-paths", tag = "v0.1.0" }
 

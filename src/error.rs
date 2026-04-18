@@ -8,11 +8,6 @@ pub enum BreadcrumbError {
     Ambiguous { count: usize },
     #[error("Breadcrumb not found: {id}")]
     NotFound { id: String },
-    #[error("Project '{project_id}' locked by {other_session}; retry in a moment")]
-    ProjectLocked {
-        project_id: String,
-        other_session: String,
-    },
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     #[error("JSON error: {0}")]
