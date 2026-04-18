@@ -1,6 +1,6 @@
-use std::path::PathBuf;
-use crate::schema::Breadcrumb;
 use crate::error::BreadcrumbError;
+use crate::schema::Breadcrumb;
+use std::path::PathBuf;
 
 /// Resolve the Volumes archive base path.
 ///

@@ -11,10 +11,10 @@
 //! Callers that pass no `project_id` get project `_ungrouped`.
 //! Callers that pass no `breadcrumb_id` work as long as there is exactly one active breadcrumb.
 
-pub mod error;
-pub mod schema;
 mod archive;
 mod conflict;
+pub mod error;
+pub mod schema;
 mod storage;
 
 pub use error::BreadcrumbError;
@@ -41,7 +41,11 @@ pub struct WriterContext {
 }
 
 impl WriterContext {
-    pub fn new(actor: impl Into<String>, machine: impl Into<String>, session: impl Into<String>) -> Self {
+    pub fn new(
+        actor: impl Into<String>,
+        machine: impl Into<String>,
+        session: impl Into<String>,
+    ) -> Self {
         WriterContext {
             actor: actor.into(),
             machine: machine.into(),
@@ -129,7 +133,9 @@ pub fn start(
     ensure_dirs()?;
 
     let id = schema::new_id(name);
-    let pid = project_id.clone().unwrap_or_else(|| "_ungrouped".to_string());
+    let pid = project_id
+        .clone()
+        .unwrap_or_else(|| "_ungrouped".to_string());
     let now = now_rfc3339();
     let total = steps.len();
 
@@ -332,7 +338,9 @@ pub fn start_auto(
     ensure_dirs()?;
 
     let id = schema::new_id(name);
-    let pid = project_id.clone().unwrap_or_else(|| "_ungrouped".to_string());
+    let pid = project_id
+        .clone()
+        .unwrap_or_else(|| "_ungrouped".to_string());
     let now = now_rfc3339();
     let total = steps.len();
 
@@ -459,7 +467,10 @@ pub fn status(project_id: Option<&str>) -> Result<Value, BreadcrumbError> {
     let index = read_index();
 
     let entries: Vec<&IndexEntry> = if let Some(pid) = project_id {
-        index.values().filter(|e| e.project_id.as_deref() == Some(pid)).collect()
+        index
+            .values()
+            .filter(|e| e.project_id.as_deref() == Some(pid))
+            .collect()
     } else {
         index.values().collect()
     };
@@ -473,7 +484,8 @@ pub fn status(project_id: Option<&str>) -> Result<Value, BreadcrumbError> {
         .map(|e| {
             let stale = chrono::DateTime::parse_from_rfc3339(&e.last_activity_at)
                 .map(|dt| {
-                    let age = chrono::Utc::now().signed_duration_since(dt.with_timezone(&chrono::Utc));
+                    let age =
+                        chrono::Utc::now().signed_duration_since(dt.with_timezone(&chrono::Utc));
                     age.num_hours() >= 4
                 })
                 .unwrap_or(false);
@@ -763,7 +775,11 @@ pub fn reconcile(stale_threshold_hours: u64) -> ReconcileReport {
                     name: entry.name.clone(),
                     last_activity_at: entry.last_activity_at.clone(),
                     hours_stale,
-                    project_id: entry.project_id.as_deref().unwrap_or("ungrouped").to_string(),
+                    project_id: entry
+                        .project_id
+                        .as_deref()
+                        .unwrap_or("ungrouped")
+                        .to_string(),
                 });
                 Some(id.clone())
             } else {
@@ -958,7 +974,10 @@ mod tests {
         assert!(conflict::check(&bc, "session_other").is_none());
         // Different session, last_activity_at just now → conflict
         let info = conflict::check(&bc, "session_mine");
-        assert!(info.is_some(), "Expected conflict for different session within 30s");
+        assert!(
+            info.is_some(),
+            "Expected conflict for different session within 30s"
+        );
     }
 
     #[test]
@@ -971,7 +990,10 @@ mod tests {
 
         let mut bc2 = make_test_bc("bc_fresh_test", "_ungrouped");
         bc2.last_activity_at = chrono::Utc::now().to_rfc3339();
-        assert!(!bc2.is_stale(), "Just-created breadcrumb should not be stale");
+        assert!(
+            !bc2.is_stale(),
+            "Just-created breadcrumb should not be stale"
+        );
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────
@@ -985,7 +1007,11 @@ mod tests {
         Breadcrumb {
             id: id.to_string(),
             name: format!("Test BC {}", id),
-            project_id: if project_id == "_ungrouped" { None } else { Some(project_id.to_string()) },
+            project_id: if project_id == "_ungrouped" {
+                None
+            } else {
+                Some(project_id.to_string())
+            },
             owner: "test_actor".to_string(),
             writer_actor: "test_actor".to_string(),
             writer_machine: "test_machine".to_string(),
@@ -1067,7 +1093,10 @@ mod tests {
             assert!(archived2.exists(), "Completed archive file should exist");
             let content2 = std::fs::read_to_string(&archived2).unwrap();
             let bc2: Breadcrumb = serde_json::from_str(&content2).unwrap();
-            assert!(!bc2.aborted, "Completed breadcrumb should have aborted=false");
+            assert!(
+                !bc2.aborted,
+                "Completed breadcrumb should have aborted=false"
+            );
         });
     }
 
@@ -1089,14 +1118,21 @@ mod tests {
             std::fs::write(
                 day_dir.join("bc_archived_fake.json"),
                 serde_json::to_string_pretty(&fake_bc).unwrap(),
-            ).unwrap();
+            )
+            .unwrap();
 
             // list(scope="active") should return ONLY the 2 active entries
             let active_list = list(Some("active")).unwrap();
-            assert_eq!(active_list["count"], 2, "active scope should have 2 entries");
+            assert_eq!(
+                active_list["count"], 2,
+                "active scope should have 2 entries"
+            );
             let bcs = active_list["breadcrumbs"].as_array().unwrap();
             let ids: Vec<&str> = bcs.iter().map(|b| b["id"].as_str().unwrap()).collect();
-            assert!(!ids.contains(&"bc_archived_fake"), "archived entry should NOT appear in active scope");
+            assert!(
+                !ids.contains(&"bc_archived_fake"),
+                "archived entry should NOT appear in active scope"
+            );
 
             // list(scope="today") should return all 3 (2 active + 1 archived)
             let today_list = list(Some("today")).unwrap();
@@ -1125,7 +1161,8 @@ mod tests {
             std::fs::write(
                 day_dir.join("bc_completed_old.json"),
                 serde_json::to_string_pretty(&completed_bc).unwrap(),
-            ).unwrap();
+            )
+            .unwrap();
 
             // Create a fake archived breadcrumb (aborted)
             let mut aborted_bc = make_test_bc("bc_aborted_old", "_ungrouped");
@@ -1135,7 +1172,8 @@ mod tests {
             std::fs::write(
                 day_dir.join("bc_aborted_old.json"),
                 serde_json::to_string_pretty(&aborted_bc).unwrap(),
-            ).unwrap();
+            )
+            .unwrap();
 
             // abort on completed archived ID → already_archived
             let result = abort("trying again", Some("bc_completed_old"), &ctx).unwrap();
@@ -1151,8 +1189,16 @@ mod tests {
             let adopt_err = adopt("bc_completed_old", &ctx);
             assert!(adopt_err.is_err(), "adopt on archived should fail");
             let err_msg = adopt_err.unwrap_err().to_string();
-            assert!(err_msg.contains("Cannot adopt"), "Error should contain 'Cannot adopt': {}", err_msg);
-            assert!(err_msg.contains("completed"), "Error should mention result type: {}", err_msg);
+            assert!(
+                err_msg.contains("Cannot adopt"),
+                "Error should contain 'Cannot adopt': {}",
+                err_msg
+            );
+            assert!(
+                err_msg.contains("completed"),
+                "Error should mention result type: {}",
+                err_msg
+            );
 
             // abort on truly non-existent ID → normal NotFound error
             let not_found = abort("nope", Some("bc_does_not_exist"), &ctx);
@@ -1173,30 +1219,39 @@ mod tests {
             let recent_time = (now - chrono::Duration::minutes(10)).to_rfc3339();
 
             let mut index = std::collections::HashMap::new();
-            index.insert("bc_fresh".to_string(), IndexEntry {
-                id: "bc_fresh".to_string(),
-                project_id: None,
-                name: "Fresh BC".to_string(),
-                owner: "tester".to_string(),
-                last_activity_at: fresh_time.clone(),
-                started_at: fresh_time,
-            });
-            index.insert("bc_stale_untouched".to_string(), IndexEntry {
-                id: "bc_stale_untouched".to_string(),
-                project_id: Some("proj_a".to_string()),
-                name: "Stale Untouched BC".to_string(),
-                owner: "tester".to_string(),
-                last_activity_at: stale_time.clone(),
-                started_at: stale_time,
-            });
-            index.insert("bc_stale_recent".to_string(), IndexEntry {
-                id: "bc_stale_recent".to_string(),
-                project_id: None,
-                name: "Stale But Recent BC".to_string(),
-                owner: "tester".to_string(),
-                last_activity_at: recent_time,
-                started_at: (now - chrono::Duration::hours(50)).to_rfc3339(),
-            });
+            index.insert(
+                "bc_fresh".to_string(),
+                IndexEntry {
+                    id: "bc_fresh".to_string(),
+                    project_id: None,
+                    name: "Fresh BC".to_string(),
+                    owner: "tester".to_string(),
+                    last_activity_at: fresh_time.clone(),
+                    started_at: fresh_time,
+                },
+            );
+            index.insert(
+                "bc_stale_untouched".to_string(),
+                IndexEntry {
+                    id: "bc_stale_untouched".to_string(),
+                    project_id: Some("proj_a".to_string()),
+                    name: "Stale Untouched BC".to_string(),
+                    owner: "tester".to_string(),
+                    last_activity_at: stale_time.clone(),
+                    started_at: stale_time,
+                },
+            );
+            index.insert(
+                "bc_stale_recent".to_string(),
+                IndexEntry {
+                    id: "bc_stale_recent".to_string(),
+                    project_id: None,
+                    name: "Stale But Recent BC".to_string(),
+                    owner: "tester".to_string(),
+                    last_activity_at: recent_time,
+                    started_at: (now - chrono::Duration::hours(50)).to_rfc3339(),
+                },
+            );
 
             storage::write_index(&index).unwrap();
 
@@ -1204,26 +1259,58 @@ mod tests {
             let report = reconcile(48);
 
             assert_eq!(report.scanned, 3, "Should scan 3 entries");
-            assert_eq!(report.stale_found.len(), 1, "Only 1 entry should be stale (bc_stale_untouched)");
+            assert_eq!(
+                report.stale_found.len(),
+                1,
+                "Only 1 entry should be stale (bc_stale_untouched)"
+            );
             assert_eq!(report.stale_found[0].id, "bc_stale_untouched");
-            assert!(report.stale_found[0].hours_stale >= 49, "Should be ~50h stale");
+            assert!(
+                report.stale_found[0].hours_stale >= 49,
+                "Should be ~50h stale"
+            );
             assert_eq!(report.handoff_entries_written, 1);
-            assert!(report.handoff_path.is_some(), "Handoff file should be written");
+            assert!(
+                report.handoff_path.is_some(),
+                "Handoff file should be written"
+            );
 
             // Verify active index lost the stale entry
             let updated_index = storage::read_index();
-            assert_eq!(updated_index.len(), 2, "Index should have 2 entries after reconcile");
-            assert!(updated_index.contains_key("bc_fresh"), "Fresh entry should remain");
-            assert!(updated_index.contains_key("bc_stale_recent"), "Recent-activity entry should remain");
-            assert!(!updated_index.contains_key("bc_stale_untouched"), "Stale entry should be removed");
+            assert_eq!(
+                updated_index.len(),
+                2,
+                "Index should have 2 entries after reconcile"
+            );
+            assert!(
+                updated_index.contains_key("bc_fresh"),
+                "Fresh entry should remain"
+            );
+            assert!(
+                updated_index.contains_key("bc_stale_recent"),
+                "Recent-activity entry should remain"
+            );
+            assert!(
+                !updated_index.contains_key("bc_stale_untouched"),
+                "Stale entry should be removed"
+            );
 
             // Verify handoff file content
             let handoff_path = report.handoff_path.unwrap();
             assert!(handoff_path.exists(), "Handoff file should exist");
             let content = std::fs::read_to_string(&handoff_path).unwrap();
-            assert!(content.contains("# Pending Breadcrumbs"), "Should have markdown header");
-            assert!(content.contains("Stale Untouched BC"), "Should contain the stale breadcrumb name");
-            assert!(content.contains("bc_stale_untouched"), "Should contain the stale breadcrumb ID");
+            assert!(
+                content.contains("# Pending Breadcrumbs"),
+                "Should have markdown header"
+            );
+            assert!(
+                content.contains("Stale Untouched BC"),
+                "Should contain the stale breadcrumb name"
+            );
+            assert!(
+                content.contains("bc_stale_untouched"),
+                "Should contain the stale breadcrumb ID"
+            );
             assert!(content.contains("proj_a"), "Should contain the project ID");
         });
     }

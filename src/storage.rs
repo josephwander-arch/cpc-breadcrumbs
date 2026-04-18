@@ -28,7 +28,13 @@ pub fn project_file(project_id: &str) -> PathBuf {
     // Sanitize project_id to safe filename chars.
     let safe: String = project_id
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     projects_dir().join(format!("{}.jsonl", safe))
 }
@@ -145,10 +151,7 @@ fn open_locked(path: &PathBuf, project_id: &str) -> Result<std::fs::File, Breadc
 
 /// Read-modify-write a project file under exclusive lock.
 /// `f` receives the current breadcrumbs and may mutate them.
-pub fn locked_write_project<F>(
-    project_id: &str,
-    f: F,
-) -> Result<(), BreadcrumbError>
+pub fn locked_write_project<F>(project_id: &str, f: F) -> Result<(), BreadcrumbError>
 where
     F: FnOnce(&mut Vec<Breadcrumb>) -> Result<(), BreadcrumbError>,
 {
@@ -159,7 +162,8 @@ where
 
     // Read current content
     let mut content = String::new();
-    file.read_to_string(&mut content).map_err(BreadcrumbError::Io)?;
+    file.read_to_string(&mut content)
+        .map_err(BreadcrumbError::Io)?;
 
     let mut breadcrumbs: Vec<Breadcrumb> = content
         .lines()
@@ -188,9 +192,7 @@ where
 
 /// Resolve which (breadcrumb_id, project_id) to operate on.
 /// If `breadcrumb_id` is None, requires exactly 1 active; else ambiguity error.
-pub fn resolve(
-    breadcrumb_id: Option<&str>,
-) -> Result<(String, String), BreadcrumbError> {
+pub fn resolve(breadcrumb_id: Option<&str>) -> Result<(String, String), BreadcrumbError> {
     let index = read_index();
 
     if let Some(id) = breadcrumb_id {
@@ -207,7 +209,11 @@ pub fn resolve(
         0 => Err(BreadcrumbError::NoActive),
         1 => {
             let (id, entry) = index.iter().next().unwrap();
-            let pid = entry.project_id.as_deref().unwrap_or("_ungrouped").to_string();
+            let pid = entry
+                .project_id
+                .as_deref()
+                .unwrap_or("_ungrouped")
+                .to_string();
             Ok((id.clone(), pid))
         }
         n => Err(BreadcrumbError::Ambiguous { count: n }),
@@ -235,7 +241,11 @@ pub fn reap_stale(hours: u64) {
             Err(_) => false,
         };
         if is_stale {
-            let pid = entry.project_id.as_deref().unwrap_or("_ungrouped").to_string();
+            let pid = entry
+                .project_id
+                .as_deref()
+                .unwrap_or("_ungrouped")
+                .to_string();
             stale_by_project.entry(pid).or_default().push(id.clone());
         }
     }
@@ -257,7 +267,10 @@ pub fn reap_stale(hours: u64) {
         if res.is_ok() {
             reaped_ids.extend(ids.clone());
         } else {
-            eprintln!("[breadcrumb reap] Failed to reap project {}: {:?}", project_id, res);
+            eprintln!(
+                "[breadcrumb reap] Failed to reap project {}: {:?}",
+                project_id, res
+            );
         }
     }
 

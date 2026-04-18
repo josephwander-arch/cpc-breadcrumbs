@@ -1,5 +1,5 @@
-use chrono::Utc;
 use crate::schema::{Breadcrumb, ConflictInfo};
+use chrono::Utc;
 
 /// Check if there is a concurrent writer for this breadcrumb.
 /// Returns `Some(ConflictInfo)` if `last_activity_at` is within 30s AND `writer_session` differs.
