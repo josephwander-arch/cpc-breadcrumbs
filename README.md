@@ -66,6 +66,8 @@ Active:   C:\My Drive\Volumes\breadcrumbs\active\bc_{id}.json
 Archive:  C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\bc_{id}.json
 ```
 
+Default storage is under `C:\My Drive\Volumes\breadcrumbs\` on Windows with Google Drive for Desktop installed (`My Drive` is the local mount point for Google Drive). Override via the `CPC_VOLUMES_PATH` environment variable.
+
 ### Migration (v0.2 to v0.3)
 
 On first `init()`, the library checks for legacy state at `C:\CPC\state\breadcrumbs\`. If found:
