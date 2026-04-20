@@ -74,8 +74,18 @@ pub fn machine_name() -> String {
 
 // ── Server init (call from main) ───────────────────────────────────────────────
 
+/// Default reap threshold: breadcrumbs idle >24h are auto-aborted on server startup.
+/// Users can override via CPC_BREADCRUMB_AUTO_REAP_HOURS env var.
+/// Set CPC_BREADCRUMB_AUTO_REAP_HOURS=0 to disable reaping entirely.
+const DEFAULT_REAP_HOURS: u64 = 24;
+
 /// Must be called on server startup. Creates storage dirs, runs legacy migration,
-/// and optionally reaps stale breadcrumbs.
+/// and reaps stale breadcrumbs.
+///
+/// Reap threshold:
+/// - Default: 24 hours (auto-aborts any breadcrumb with last_activity_at > 24h ago)
+/// - Override: set env var `CPC_BREADCRUMB_AUTO_REAP_HOURS=N` (N hours)
+/// - Disable: set env var `CPC_BREADCRUMB_AUTO_REAP_HOURS=0`
 pub fn init() {
     if let Err(e) = storage::ensure_dirs() {
         eprintln!("[cpc-breadcrumbs] Failed to create storage dirs: {}", e);
@@ -84,13 +94,15 @@ pub fn init() {
     // Run legacy migration (idempotent — no-op if already migrated)
     storage::migrate_legacy();
 
-    let hours = std::env::var("CPC_BREADCRUMB_AUTO_REAP_HOURS")
-        .ok()
-        .and_then(|v| v.parse::<u64>().ok())
-        .filter(|&h| h > 0);
+    // Determine reap threshold: env var takes precedence, default is 24h.
+    // Setting CPC_BREADCRUMB_AUTO_REAP_HOURS=0 disables reaping entirely.
+    let hours = match std::env::var("CPC_BREADCRUMB_AUTO_REAP_HOURS") {
+        Ok(v) => v.parse::<u64>().ok().unwrap_or(DEFAULT_REAP_HOURS),
+        Err(_) => DEFAULT_REAP_HOURS,
+    };
 
-    if let Some(h) = hours {
-        storage::reap_stale(h);
+    if hours > 0 {
+        storage::reap_stale(hours);
     }
 }
 

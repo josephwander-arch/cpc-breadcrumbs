@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-20
+
+### Changed
+- `init()` now reaps stale breadcrumbs by default (threshold: 24 hours of inactivity).
+  Previously this required opting in via `CPC_BREADCRUMB_AUTO_REAP_HOURS` env var, which
+  most users didn't know existed. Now it's on by default; users can override the threshold
+  or disable it entirely via the same env var.
+
+### Migration
+No action required. On first restart after upgrading, any breadcrumbs stuck >24h will be
+auto-aborted with `abort_reason = "auto-reaped: stale >24h on server restart"`. To keep
+the old behavior (no auto-reap), set `CPC_BREADCRUMB_AUTO_REAP_HOURS=0` in your env.
+
+### Env var behavior
+| Value | Result |
+|-------|--------|
+| Unset (new default) | Reap breadcrumbs idle >24h |
+| `0` | Disable reaping entirely |
+| `N` (positive integer) | Reap breadcrumbs idle >N hours |
+
 ## [0.3.0] - 2026-04-18
 
 ### Changed

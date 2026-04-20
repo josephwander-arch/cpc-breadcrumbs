@@ -12,7 +12,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.git", tag = "v0.3.0" }
+cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs.git", tag = "v0.3.1" }
 ```
 
 ## What it does
@@ -84,7 +84,7 @@ Migration is idempotent -- safe to run multiple times. Once the legacy dir is re
 |---|---|
 | `CPC_ACTOR` | Actor name injected into writer context |
 | `CPC_SESSION_ID` | Session ID for conflict detection |
-| `CPC_BREADCRUMB_AUTO_REAP_HOURS` | Reap stale breadcrumbs older than N hours (0 = disabled) |
+| `CPC_BREADCRUMB_AUTO_REAP_HOURS` | Reap threshold in hours (default: 24). Set to `0` to disable. |
 
 ## Build from Source
 
@@ -106,6 +106,7 @@ This is a library crate — no binary is produced. Requires Rust stable toolchai
 - v0.1.x -- Windows verified, file-locked JSONL storage, multi-project support
 - v0.2.0 -- macOS/Linux verified, archive discipline, reconcile primitive
 - v0.3.0 -- Unified one-file-per-breadcrumb storage, legacy migration, orphan recovery
+- v0.3.1 -- Auto-reap stale breadcrumbs by default (24h threshold)
 
 ## Contributing
 
